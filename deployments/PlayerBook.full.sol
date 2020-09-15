@@ -544,9 +544,15 @@ library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
 
+    bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
+
     function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+        (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(SELECTOR, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'SafeERC20: TRANSFER_FAILED');
     }
+    // function safeTransfer(IERC20 token, address to, uint256 value) internal {
+    //     callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    // }
 
     function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
         callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));

@@ -421,6 +421,16 @@ interface IPlayerBook {
 
 }
 
+// File: contracts/interface/IPool.sol
+
+pragma solidity ^0.5.0;
+
+
+interface IPool {
+    function totalSupply( ) external view returns (uint256);
+    function balanceOf( address player ) external view returns (uint256);
+}
+
 // File: @openzeppelin/contracts/utils/Address.sol
 
 pragma solidity ^0.5.5;
@@ -515,9 +525,15 @@ library SafeERC20 {
     using SafeMath for uint256;
     using Address for address;
 
+    bytes4 private constant SELECTOR = bytes4(keccak256(bytes('transfer(address,uint256)')));
+
     function safeTransfer(IERC20 token, address to, uint256 value) internal {
-        callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+        (bool success, bytes memory data) = address(token).call(abi.encodeWithSelector(SELECTOR, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'SafeERC20: TRANSFER_FAILED');
     }
+    // function safeTransfer(IERC20 token, address to, uint256 value) internal {
+    //     callOptionalReturn(token, abi.encodeWithSelector(token.transfer.selector, to, value));
+    // }
 
     function safeTransferFrom(IERC20 token, address from, address to, uint256 value) internal {
         callOptionalReturn(token, abi.encodeWithSelector(token.transferFrom.selector, from, to, value));
@@ -649,13 +665,14 @@ pragma solidity ^0.5.0;
 
 
 
-contract LPTokenWrapper is Governance {
+
+contract LPTokenWrapper is IPool,Governance {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public _lpToken = IERC20(0x6666666666666666666666666666666666666666);
+    IERC20 public _lpToken = IERC20(0x23f7D99C169dEe26b215EdF806DA8fA0706C4EcC);
 
-    address public _playerBook = address(0x6666666666666666666666666666666666666666);
+    address public _playerBook = address(0x4cc945E7b97fED1EAD961Cd83eD622Fe48BBf3a0);
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
@@ -681,6 +698,7 @@ contract LPTokenWrapper is Governance {
     function balanceOfPower(address account) public view returns (uint256) {
         return _powerBalances[account];
     }
+
 
 
     function totalPower() public view returns (uint256) {
@@ -747,16 +765,16 @@ pragma solidity ^0.5.0;
 
 
 
-contract UniswapReward is LPTokenWrapper {
+contract UniswapReward is LPTokenWrapper{
     using SafeERC20 for IERC20;
 
-    IERC20 public _dego = IERC20(0x88ef27e69108b2633f8e1c184cc37940a075cc02);
+    IERC20 public _dego = IERC20(0x88EF27e69108B2633F8E1C184CC37940A075cC02);
     address public _teamWallet = 0x3D0a845C5ef9741De999FC068f70E2048A489F2b;
     address public _rewardPool = 0xEA6dEc98e137a87F78495a8386f7A137408f7722;
 
-    uint256 public constant DURATION = 14 days;
+    uint256 public constant DURATION = 7 days;
 
-    uint256 public _initReward = 4200000 * 1e18;
+    uint256 public _initReward = 2100000 * 1e18;
     uint256 public _startTime =  now + 365 days;
     uint256 public _periodFinish = 0;
     uint256 public _rewardRate = 0;
@@ -794,7 +812,7 @@ contract UniswapReward is LPTokenWrapper {
     /* Fee collection for any other token */
     function seize(IERC20 token, uint256 amount) external onlyGovernance{
         require(token != _dego, "reward");
-        require(token != _lpToken, "vote");
+        require(token != _lpToken, "stake");
         token.safeTransfer(_governance, amount);
     }
 
@@ -937,5 +955,26 @@ contract UniswapReward is LPTokenWrapper {
         _periodFinish = _startTime.add(DURATION);
 
         emit RewardAdded(_initReward);
+    }
+
+    //
+
+    //for extra reward
+    function notifyRewardAmount(uint256 reward)
+        external
+        onlyGovernance
+        updateReward(address(0))
+    {
+        IERC20(_dego).safeTransferFrom(msg.sender, address(this), reward);
+        if (block.timestamp >= _periodFinish) {
+            _rewardRate = reward.div(DURATION);
+        } else {
+            uint256 remaining = _periodFinish.sub(block.timestamp);
+            uint256 leftover = remaining.mul(_rewardRate);
+            _rewardRate = reward.add(leftover).div(DURATION);
+        }
+        _lastUpdateTime = block.timestamp;
+        _periodFinish = block.timestamp.add(DURATION);
+        emit RewardAdded(reward);
     }
 }

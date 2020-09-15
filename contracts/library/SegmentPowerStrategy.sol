@@ -30,7 +30,7 @@ contract SegmentPowerStrategy is IPowerStrategy, Governance {
     mapping(uint32 => playerInfo) public _playerMap;
 
     uint8[3] public _ruler = [8, 1, 1];
-    uint8[3] public _factor = [1, 3, 5];
+    uint8[3] public _factor = [3, 5, 1];
 
     uint8 public _high = 3;
     uint8 public _mid = 2;
@@ -44,7 +44,7 @@ contract SegmentPowerStrategy is IPowerStrategy, Governance {
     uint32 constant public _highMax = 50;
     uint32 constant public _midMax = 50;
 
-    uint256 constant public  _initMaxValue = 10000 * (10**18);
+    uint256 constant public  _initMaxValue = 500 * (10**18);  //500lp,10w usdt,100 eth
 
     address public _contractCaller = address(0x0);
 

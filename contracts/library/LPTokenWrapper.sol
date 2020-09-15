@@ -4,6 +4,7 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 
 import "../interface/IERC20.sol";
+import "../interface/IPool.sol";
 import "./SafeERC20.sol";
 import "./DegoMath.sol";
 import "./Governance.sol";
@@ -11,13 +12,13 @@ import "../interface/IPlayerBook.sol";
 import "../interface/IPowerStrategy.sol";
 
 
-contract LPTokenWrapper is Governance {
+contract LPTokenWrapper is IPool,Governance {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    IERC20 public _lpToken = IERC20(0x6666666666666666666666666666666666666666);
+    IERC20 public _lpToken = IERC20(0x23f7D99C169dEe26b215EdF806DA8fA0706C4EcC);
 
-    address public _playerBook = address(0x4cc945e7b97fed1ead961cd83ed622fe48bbf3a0);
+    address public _playerBook = address(0x4cc945E7b97fED1EAD961Cd83eD622Fe48BBf3a0);
 
     uint256 private _totalSupply;
     mapping(address => uint256) private _balances;
