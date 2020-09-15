@@ -29,12 +29,11 @@ contract UniswapReward is LPTokenWrapper{
     uint256 public _teamRewardRate = 500;
     uint256 public _poolRewardRate = 1000;
     uint256 public _baseRate = 10000;
-    uint256 public _lastStakeTime;
     uint256 public _punishTime = 3 days;
-
 
     mapping(address => uint256) public _userRewardPerTokenPaid;
     mapping(address => uint256) public _rewards;
+    mapping(address => uint256) public _lastStakedTime;
 
     bool public _hasStart = false;
 
@@ -109,7 +108,7 @@ contract UniswapReward is LPTokenWrapper{
         require(amount > 0, "Cannot stake 0");
         super.stake(amount, affCode);
 
-        _lastStakeTime = now;
+        _lastStakedTime[msg.sender] = now;
 
         emit Staked(msg.sender, amount);
     }
@@ -148,7 +147,8 @@ contract UniswapReward is LPTokenWrapper{
             uint256 poolReward = 0;
 
             //withdraw time check
-            if(now  < (_lastStakeTime + _punishTime) ){
+
+            if(now  < (_lastStakedTime[msg.sender] + _punishTime) ){
                 poolReward = leftReward.mul(_poolRewardRate).div(_baseRate);
             }
             if(poolReward>0){
